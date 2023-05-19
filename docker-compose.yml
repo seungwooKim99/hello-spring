@@ -1,0 +1,7 @@
+version: "3.9"
+services:
+  test-api-server:
+    image: "sonic886/hello-spring2"
+    ports:
+      - "8080:8080"
+    restart: "always"

@@ -43,22 +43,46 @@ jobs:
         run: echo "CurrentTime=${{steps.current-time.outputs.formattedTime}}" # (2)
         shell: bash
 
-      - name: Generate deployment package
-        run: |
-          mkdir -p deploy
-          cp build/libs/*.jar deploy/application.jar
-          cp Procfile deploy/Procfile
-          cp -r .ebextensions deploy/.ebextensions
-          cp -r .platform deploy/.platform
-          cd deploy && zip -r deploy.zip .
+      - name: 도커 이미지 빌드 # (2)
+        run: docker build -t sonic886/hello-spring2 .
 
-      - name: Deploy to EB
+      - name: Docker Hub 로그인 # (3)
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Docker Hub 퍼블리시 # (4)
+        run: docker push sonic886/hello-spring2
+
+#      - name: Generate deployment package
+#        run: |
+#          mkdir -p deploy
+#          cp build/libs/*.jar deploy/application.jar
+#          cp Procfile deploy/Procfile
+#          cp -r .ebextensions deploy/.ebextensions
+#          cp -r .platform deploy/.platform
+#          cd deploy && zip -r deploy.zip .
+
+#      - name: Deploy to EB
+#        uses: einaregilsson/beanstalk-deploy@v21
+#        with:
+#            aws_access_key: ${{ secrets.AWS_ACCESS_KEY_ID }}
+#            aws_secret_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+#            application_name: hello-spring2-webservice
+#            environment_name: Hello-spring2-webservice-env
+#            version_label: github-action-${{steps.current-time.outputs.formattedTime}}
+#            region: ap-northeast-2
+#            deployment_package: deploy/deploy.zip
+
+      - name: Deploy to elastic beanstalk
         uses: einaregilsson/beanstalk-deploy@v21
         with:
-            aws_access_key: ${{ secrets.AWS_ACCESS_KEY_ID }}
-            aws_secret_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-            application_name: hello-spring2-webservice
-            environment_name: Hello-spring2-webservice-env
-            version_label: github-action-${{steps.current-time.outputs.formattedTime}}
-            region: ap-northeast-2
-            deployment_package: deploy/deploy.zip
+          aws_access_key: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws_secret_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          application_name: test2
+          environment_name: Test2-env
+          version_label: github-action-${{steps.current-time.outputs.formattedTime}}
+          version_description: ${{ github.event.head_commit.message }}
+          region: ap-northeast-2
+          deployment_package: docker-compose.yml
